@@ -3,13 +3,13 @@ from api_metrika import Counter
 from sqlalchemy import inspect
 import mssql
 import config_file
-import bd_config
+import config_env
 import general
 from loguru import logger
 from dotenv import load_dotenv
 
 
-load_dotenv(bd_config.PATH_ENV)
+load_dotenv(config_env.PATH_ENV)
 
 def main():
     logger.info('Start script')
