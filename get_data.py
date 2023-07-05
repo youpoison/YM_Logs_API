@@ -30,9 +30,9 @@ def main():
     if config_file.table_name in insp.get_table_names():
         logger.warning('Table already exists.')
         subject = 'MetrikaLogsAPI. Ошибка создания таблицы.'
-        text = f'Таблица {config_file.table_name} уже существуент в БД {bd_config.DATABASE_METRIKA_RAW_DATA}.\n' \
+        text = f'Таблица {config_file.table_name} уже существуент в БД {os.environ.get("MS_BD")}.\n' \
                f'Переименуйте таблицу.'
-        general.send_mail(bd_config.HOST, bd_config.FROM, config_file.w_email, subject, text)
+        general.send_mail(os.environ.get('YA_HOST'), os.environ.get('YA_FROM'), config_file.w_email, subject, text)
         exit()
 
     # создаем объект подключения к yandex metrika

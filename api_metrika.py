@@ -10,7 +10,11 @@ import time
 from sqlalchemy import MetaData, insert, update
 from sqlathanor import Table
 import uuid
+import os
+from dotenv import load_dotenv
 
+
+load_dotenv(bd_config.PATH_ENV)
 
 class Counter:
 
@@ -189,14 +193,7 @@ class Counter:
         return dict_result
 
     def get_report_bulk_insert(self, engine, type_report, counter, start_date, end_date, fields, table_name, w_email):
-        folder = 'D:\Python_project\dmitry.kochnev\integration_web\YM_LogsAPI_manual\write_to_bd'
-        # загружаем таблицу лога из БД
-        meta = MetaData(engine)
-        conn = engine.connect()
-        report_history = Table('report_history', meta, autoload=True)
-        # формируем уникальный ID для отчета
-        unic_id = str(uuid.uuid1())
-        start_time = datetime.now()
+
         # формируется словарь параметров
         params = {
             "fields": f'{",".join(str(e) for e in fields)}',  # преобразование list в string
@@ -220,7 +217,7 @@ class Counter:
                 subject = 'MetrikaLogsAPI. Download failed'
                 text = f'Выгрузка отчета завершилась ошибкой.\n' \
                        f'{err}'
-                general.send_mail(bd_config.HOST, bd_config.FROM, w_email, subject, text)
+                general.send_mail(os.environ.get('YA_HOST'), os.environ.get('YA_FROM'), w_email, subject, text)
             # получение id запроса
             request_id = order['log_request']['request_id']
             logger.info(f'Id of the created report {request_id}')
@@ -239,7 +236,7 @@ class Counter:
                            f'Отчет не может быть сформирован, запустите скрипт заново.\n' \
                            f'Если вы видите эту ошибку, просьба проинформировать о ней dmitry.kochnev@megafon.ru\n' \
                            f'Либо другого ответственного за работоспособность скрипта сотрудника.'
-                    general.send_mail(bd_config.HOST, bd_config.FROM, w_email, subject, text)
+                    general.send_mail(os.environ.get('YA_HOST'), os.environ.get('YA_FROM'), w_email, subject, text)
                     self.del_report(request_id)
                     exit()
                 time.sleep(6)
@@ -276,45 +273,15 @@ class Counter:
                                 stat_response = 'timeout'
 
             logger.info('Report success')
-            logger.info('Writing to csv')
+            logger.info('Writing to BD')
 
-            # логируем успешное получение отчета
-            ins = report_history.insert().values(
-                id=f"{unic_id}",
-                create_time=f"{datetime.now()}",
-                script_start_time=f"{start_time}",
-                report_name=f"{table_name}",
-                report_id=f"{request_id}",
-                report_type=f"{type_report}",
-                start_date=f"{datetime.strptime(start_date, '%Y-%m-%d')}",
-                end_date=f"{datetime.strptime(end_date, '%Y-%m-%d')}",
-                report_params=f"{fields}",
-                counter=f"{counter}",
-                email=f"{w_email}",
-                write_csv="0",
-                write_bd="0"
-            )
-            conn.execute(ins)
-
-            empty_df = report_df.iloc[0:0]
-
-            empty_df.to_sql(table_name,
+            report_df.to_sql(table_name,
                             con=engine,
                             schema='dbo',
                             if_exists='fail',
                             index=False,
                             chunksize=20,
                             method='multi')
-
-            report_df.to_csv(f'{folder}\{table_name}.csv', sep=';', index=False)
-
-            # логируем успешную запись отчета в csv
-            upd = report_history.update().values(
-                write_csv="1"
-            ).where(
-                report_history.c.id == unic_id
-            )
-            conn.execute(upd)
 
             # удаляем отчет из logs api
             self.del_report(request_id)
@@ -323,7 +290,7 @@ class Counter:
         else:
             dt_start = datetime.strptime(start_date, '%Y-%m-%d')
             dt_end = datetime.strptime(end_date, '%Y-%m-%d')
-            interval = 5
+            interval = 15
             period = dt_end - dt_start
             df_all_parts = pd.DataFrame()
             logger.info(f'The report is divided into {period.days // interval + 1} uploads.')
@@ -352,7 +319,7 @@ class Counter:
                         subject = 'MetrikaLogsAPI. Download failed'
                         text = f'Выгрузка отчета завершилась ошибкой.\n' \
                                f'{err}'
-                        general.send_mail(bd_config.HOST, bd_config.FROM, w_email, subject, text)
+                        general.send_mail(os.environ.get('YA_HOST'), os.environ.get('YA_FROM'), w_email, subject, text)
                     # получение id запроса
                     request_id = order['log_request']['request_id']
                     logger.info(f'Id of the created report {request_id}')
@@ -371,7 +338,7 @@ class Counter:
                                    f'Отчет не может быть сформирован, запустите скрипт заново.\n' \
                                    f'Если вы видите эту ошибку, просьба проинформировать о ней dmitry.kochnev@megafon.ru\n' \
                                    f'Либо другого ответственного за работоспособность скрипта сотрудника.'
-                            general.send_mail(bd_config.HOST, bd_config.FROM, w_email, subject, text)
+                            general.send_mail(os.environ.get('YA_HOST'), os.environ.get('YA_FROM'), w_email, subject, text)
                             self.del_report(request_id)
                             exit()
                         time.sleep(6)
@@ -410,24 +377,6 @@ class Counter:
                     logger.info('Report success')
                     df_all_parts = pd.concat([df_all_parts, report_df])
 
-                    # логируем успешное получение отчета
-                    ins = report_history.insert().values(
-                        id=f"{unic_id}",
-                        create_time=f"{datetime.now()}",
-                        script_start_time=f"{start_time}",
-                        report_name=f"{table_name}",
-                        report_id=f"{request_id}",
-                        report_type=f"{type_report}",
-                        start_date=f"{datetime.strptime(start_date, '%Y-%m-%d')}",
-                        end_date=f"{datetime.strptime(end_date, '%Y-%m-%d')}",
-                        report_params=f"{fields}",
-                        counter=f"{counter}",
-                        email=f"{w_email}",
-                        write_csv="0",
-                        write_bd="0"
-                    )
-                    conn.execute(ins)
-
                     # удаляем отчет из logs api
                     self.del_report(request_id)
 
@@ -440,7 +389,7 @@ class Counter:
                            f'Сейчас интервал равен {interval} дней.\n' \
                            f'Если вы видите эту ошибку, просьба проинформировать о ней dmitry.kochnev@megafon.ru\n' \
                            f'Либо другого ответственного за работоспособность скрипта сотрудника.'
-                    general.send_mail(bd_config.HOST, bd_config.FROM, w_email, subject, text)
+                    general.send_mail(os.environ.get('YA_HOST'), os.environ.get('YA_FROM'), w_email, subject, text)
                     exit()
 
             # формируется словарь параметров
@@ -450,7 +399,6 @@ class Counter:
                 "date1": (dt_end - timedelta(days=period.days % interval)).strftime('%Y-%m-%d'),
                 "date2": dt_end.strftime('%Y-%m-%d')
             }
-            print(params)
             # проверка возможности создания отчета
             # https://yandex.ru/dev/metrika/doc/api2/logs/queries/evaluate.html
             possibility = self.client.evaluate().get(params=params)
@@ -465,7 +413,7 @@ class Counter:
                     subject = 'MetrikaLogsAPI. Download failed'
                     text = f'Выгрузка отчета завершилась ошибкой.\n' \
                            f'{err}'
-                    general.send_mail(bd_config.HOST, bd_config.FROM, w_email, subject, text)
+                    general.send_mail(os.environ.get('YA_HOST'), os.environ.get('YA_FROM'), w_email, subject, text)
                 # получение id запроса
                 request_id = order['log_request']['request_id']
                 logger.info(f'Id of the created report {request_id}')
@@ -484,7 +432,7 @@ class Counter:
                                f'Отчет не может быть сформирован, запустите скрипт заново.\n' \
                                f'Если вы видите эту ошибку, просьба проинформировать о ней dmitry.kochnev@megafon.ru\n' \
                                f'Либо другого ответственного за работоспособность скрипта сотрудника.'
-                        general.send_mail(bd_config.HOST, bd_config.FROM, w_email, subject, text)
+                        general.send_mail(os.environ.get('YA_HOST'), os.environ.get('YA_FROM'), w_email, subject, text)
                         self.del_report(request_id)
                         exit()
                     time.sleep(6)
@@ -523,24 +471,6 @@ class Counter:
                 logger.info('Report success')
                 df_all_parts = pd.concat([df_all_parts, report_df])
 
-                # логируем успешное получение отчета
-                ins = report_history.insert().values(
-                    id=f"{unic_id}",
-                    create_time=f"{datetime.now()}",
-                    script_start_time=f"{start_time}",
-                    report_name=f"{table_name}",
-                    report_id=f"{request_id}",
-                    report_type=f"{type_report}",
-                    start_date=f"{datetime.strptime(start_date, '%Y-%m-%d')}",
-                    end_date=f"{datetime.strptime(end_date, '%Y-%m-%d')}",
-                    report_params=f"{fields}",
-                    counter=f"{counter}",
-                    email=f"{w_email}",
-                    write_csv="0",
-                    write_bd="0"
-                )
-                conn.execute(ins)
-
                 # удаляем отчет из logs api
                 self.del_report(request_id)
 
@@ -554,16 +484,7 @@ class Counter:
                                 chunksize=20,
                                 method='multi')
 
-            logger.info('Writing to csv')
-            df_all_parts.to_csv(f'{folder}\{table_name}.csv', sep=';', index=False)
 
-            # логируем успешную запись отчета в csv
-            upd = report_history.update().values(
-                write_csv="1"
-            ).where(
-                report_history.c.id == unic_id
-            )
-            conn.execute(upd)
             logger.info('Done!')
 
 
