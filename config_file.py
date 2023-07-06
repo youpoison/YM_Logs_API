@@ -7,7 +7,7 @@
 """"
 Номер счетчика Яндекс Метрики
 """
-counter = '26851704'  # сквозной счетчик 26851704
+counter = '66217906'  # сквозной счетчик 26851704
 
 """
 Тип отчета. 
@@ -30,13 +30,7 @@ https://yandex.ru/dev/metrika/doc/api2/logs/fields/hits.html
 params_list = ["ym:pv:date",
                "ym:pv:clientID",
                "ym:pv:watchID",            
-               "ym:pv:URL",
-               "ym:pv:parsedParamsKey1", 
-               "ym:pv:parsedParamsKey2", 
-               "ym:pv:parsedParamsKey3", 
-               "ym:pv:parsedParamsKey4", 
-               "ym:pv:parsedParamsKey5", 
-               "ym:pv:parsedParamsKey6"               
+               "ym:pv:URL"
                ]
 
 
@@ -44,15 +38,15 @@ params_list = ["ym:pv:date",
 Дата начала/дата окончания в формате YYYY-MM-DD
 """
 start_date = '2023-03-01'
-end_date = '2023-03-01'
+end_date = '2023-03-15'
 
 """
 Указываем наименование таблицы в БД MetrikaRawData, куда будут помещены полученные данные
 """
-table_name = 'DFSA_427_data_03'
+table_name = 'test_write_data1'
 
 """
 Рабочая почта
 """
 
-w_email = 'mayya.abramova@Megafon.ru'
+w_email = 'godmargon@yandex.ru'

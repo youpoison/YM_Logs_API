@@ -1,0 +1,7 @@
+pyodbc==4.0.39
+SQLAlchemy==2.0.18
+loguru==0.7.0
+tqdm==4.65.0
+pandas==2.0.3
+python-dotenv==1.0.0
+requests==2.31.0

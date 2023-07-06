@@ -4,12 +4,8 @@ import general
 import bd_config
 import pandas as pd
 from loguru import logger
-from sqlalchemy.orm import Session, sessionmaker
 from datetime import datetime, timedelta
 import time
-from sqlalchemy import MetaData, insert, update
-from sqlathanor import Table
-import uuid
 import os
 from dotenv import load_dotenv
 
@@ -277,7 +273,7 @@ class Counter:
 
             report_df.to_sql(table_name,
                             con=engine,
-                            schema='dbo',
+                            # schema='dbo',
                             if_exists='fail',
                             index=False,
                             chunksize=20,
@@ -478,7 +474,7 @@ class Counter:
 
             df_all_parts.to_sql(table_name,
                                 con=engine,
-                                schema='dbo',
+                                # schema='dbo',
                                 if_exists='fail',
                                 index=False,
                                 chunksize=20,

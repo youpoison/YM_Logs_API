@@ -1,5 +1,4 @@
 import os
-
 from api_metrika import Counter
 from sqlalchemy import inspect
 import mssql
@@ -21,11 +20,13 @@ def main():
     engine = mssql.create_engine(os.environ.get('MS_USERNAME'),
                                  os.environ.get('MS_PASSWORD'),
                                  os.environ.get('MS_HOST'),
+                                 os.environ.get('MS_PORT'),
                                  os.environ.get('MS_BD'))
     logger.info('Engine create')
 
     # получаем список существующих таблиц
     insp = inspect(engine)
+
     # проверяем таблицу на существование
     if config_file.table_name in insp.get_table_names():
         logger.warning('Table already exists.')
@@ -34,6 +35,7 @@ def main():
                f'Переименуйте таблицу.'
         general.send_mail(os.environ.get('YA_HOST'), os.environ.get('YA_FROM'), config_file.w_email, subject, text)
         exit()
+
 
     # создаем объект подключения к yandex metrika
     ym_counter = Counter(os.environ.get('YM_TOKEN'), config_file.counter)
@@ -50,8 +52,8 @@ def main():
 
     subject = 'MetrikaLogsAPI. Выгрузка данных завершена.'
     text = f'Выгрузка данных завершена.\n' \
-           f'Информация находится в таблице {config_file.table_name} на сервере {bd_config.SERVER}'
-    general.send_mail(bd_config.HOST, bd_config.FROM, config_file.w_email, subject, text)
+           f'Информация находится в таблице {config_file.table_name} на сервере {os.environ.get("MS_BD")}'
+    general.send_mail(os.environ.get('YA_HOST'), os.environ.get('YA_FROM'), config_file.w_email, subject, text)
     logger.info('Сompleted successfully!')
 
 '''def delete_all_logs(counter):
@@ -70,9 +72,4 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except ValueError as err:
-        subject = 'MetrikaLogsAPI. Download failed'
-        text = f'Выгрузка отчета завершилась ошибкой.\n' \
-               f'{err}'
+    main()
