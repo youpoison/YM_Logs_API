@@ -1,7 +1,7 @@
 from requests.exceptions import ChunkedEncodingError
 from tapi_yandex_metrika import YandexMetrikaLogsapi
 import general
-import bd_config
+import config_env
 import pandas as pd
 from loguru import logger
 from datetime import datetime, timedelta
@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 
 
-load_dotenv(bd_config.PATH_ENV)
+load_dotenv(config_env.PATH_ENV)
 
 class Counter:
 

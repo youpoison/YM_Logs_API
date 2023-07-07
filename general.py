@@ -3,14 +3,14 @@ import os
 from loguru import logger
 import datetime
 import json
-import bd_config
+import config_env
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 
 DATE_FORMAT = '%Y-%m-%d'
-load_dotenv(bd_config.PATH_ENV)
+load_dotenv(config_env.PATH_ENV)
 
 
 def pretty_print() -> None:
